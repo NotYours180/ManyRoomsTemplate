@@ -8,7 +8,8 @@ public class Room
 	GameObject root;
 	Dictionary<BoxCollider, Room> exitRooms = new Dictionary<BoxCollider, Room>();
 	List<BoxCollider> exits = new List<BoxCollider>();
-	List<ConnectionPoint> connections = new List<ConnectionPoint>();
+
+	public List<ConnectionPoint> connections = new List<ConnectionPoint>();
 
 	public Room(GameObject _root)
 	{
@@ -34,6 +35,12 @@ public class Room
 	{
 		return exitRooms [bc];
 	}
+    public Room GetRoomForExit( int exit ) {
+        return exitRooms[exits[exit]];
+    }
+    public bool IsConnectionOpen( int exit ) {
+        return ( !exitRooms.ContainsKey( exits[exit] ) );
+    }
 	public ConnectionPoint GetOpenConnection()
 	{
 		for (int i = 0; i < exits.Count; i++)
@@ -57,6 +64,21 @@ public class Room
 		}
 		Debug.Log ("couldn't find connection");
 	}
+    public void RemoveRoom( Room connectedRoom ) {
+        BoxCollider exitToRoom = null;
+        foreach ( var exit in exitRooms ) {
+            if ( exit.Value == connectedRoom ) {
+                exitToRoom = exit.Key;
+                break;
+            }
+        }
+
+        if ( exitToRoom == null )
+            Debug.LogWarning( "Couldn't find room to remove" );
+
+        exitRooms.Remove( exitToRoom );
+        GameObject.Destroy( connectedRoom.GetGameObject() );
+    }
 	public GameObject GetGameObject(){
 		return root;
 	}

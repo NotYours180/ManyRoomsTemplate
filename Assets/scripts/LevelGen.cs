@@ -4,8 +4,10 @@ using System.Collections.Generic;
 
 public class LevelGen : MonoBehaviour {
 
-	// the target number of rooms to build
-	public int numberOfRooms = 12;
+    /// <summary>
+    /// how far ahead of current room do we generate rooms?
+    /// </summary>
+	public int depthToPreGen = 2; 
 
 	// the rooms that we will build the building out of
 	public GameObject[] levelBits;
@@ -36,7 +38,6 @@ public class LevelGen : MonoBehaviour {
 		GameObject firstRoom = (GameObject)Instantiate(levelBits[Random.Range(0, levelBits.Length)]);
 		rooms.Add(firstRoom);
 		currentRoom = new Room (firstRoom);
-		AddRoomsToDepth (currentRoom, 2);
 		EnteredRoom (currentRoom);
 
 		// disable all the level bits, because they cause intersection issues
@@ -46,71 +47,76 @@ public class LevelGen : MonoBehaviour {
 
 	}
 	void AddRoomsToDepth (Room startingRoom, int depth){
-		ConnectionPoint currentRoomConnection = startingRoom.GetOpenConnection();
-		while (currentRoomConnection != null)
-		{
-//			currentRoomConnection.renderer.enabled = false;
-			GameObject nextRoomPrefab = GetRoomWithConnector(currentRoomConnection.t);
-			// instance the next room
-			GameObject newRoomGO = (GameObject)Instantiate(nextRoomPrefab);
-			Room newRoom = new Room (newRoomGO);
-			// need to find the connection point again
-			ConnectionPoint[] cps = newRoomGO.GetComponentsInChildren<ConnectionPoint>();
-			cps = TensionExtensions.Shuffle(cps);
-			ConnectionPoint newRoomConnectionPoint = cps[0];
-			for(int j=0;j<cps.Length;j++)
-			{
-				newRoomConnectionPoint = cps[j];
-				if(newRoomConnectionPoint.t == currentRoomConnection.t)
-				{
-					break;
-				}
-			}
+        for ( int i = 0; i < startingRoom.connections.Count; i++ ) {
+            Room exitRoom;
+            if ( startingRoom.IsConnectionOpen( i ) ) {
+                ConnectionPoint currentRoomConnection = startingRoom.connections[i];
+                //			currentRoomConnection.renderer.enabled = false;
+                GameObject nextRoomPrefab = GetRoomWithConnector( currentRoomConnection.t );
+                // instance the next room
+                GameObject newRoomGO = (GameObject)Instantiate( nextRoomPrefab );
+                newRoomGO.SetActive( true );
+                exitRoom = new Room( newRoomGO );
+                // need to find the connection point again
+                ConnectionPoint[] cps = newRoomGO.GetComponentsInChildren<ConnectionPoint>();
+                cps = TensionExtensions.Shuffle( cps );
+                ConnectionPoint newRoomConnectionPoint = cps[0];
+                for ( int j = 0; j < cps.Length; j++ ) {
+                    newRoomConnectionPoint = cps[j];
+                    if ( newRoomConnectionPoint.t == currentRoomConnection.t ) {
+                        break;
+                    }
+                }
 
-			// rotate / translate the new room to match the transform of the existing exit
-			Transform newRoomConnectionTransform = newRoomConnectionPoint.transform;
-			newRoomGO.SetActive(true);
-			Quaternion OR = currentRoomConnection.transform.rotation;
-			currentRoomConnection.transform.Rotate(0, 180, 0);
+                // rotate / translate the new room to match the transform of the existing exit
+                Transform newRoomConnectionTransform = newRoomConnectionPoint.transform;
+                newRoomGO.SetActive( true );
+                Quaternion OR = currentRoomConnection.transform.rotation;
+                currentRoomConnection.transform.Rotate( 0, 180, 0 );
 
-			// need to do this a few times to make sure all the axis line up
-			// end with the up axis, as that is the most important one. I can't help but feel like there is a better way to handle this
-			newRoomGO.transform.rotation *= Quaternion.FromToRotation(newRoomConnectionTransform.forward, currentRoomConnection.transform.forward);
-			newRoomGO.transform.rotation *= Quaternion.FromToRotation(newRoomConnectionTransform.right, currentRoomConnection.transform.right);
-			newRoomGO.transform.rotation *= Quaternion.FromToRotation(newRoomConnectionTransform.up, currentRoomConnection.transform.up);
+                // need to do this a few times to make sure all the axis line up
+                // end with the up axis, as that is the most important one. I can't help but feel like there is a better way to handle this
+                newRoomGO.transform.rotation *= Quaternion.FromToRotation( newRoomConnectionTransform.forward, currentRoomConnection.transform.forward );
+                newRoomGO.transform.rotation *= Quaternion.FromToRotation( newRoomConnectionTransform.right, currentRoomConnection.transform.right );
+                newRoomGO.transform.rotation *= Quaternion.FromToRotation( newRoomConnectionTransform.up, currentRoomConnection.transform.up );
 
-			// unrotate the point
-			currentRoomConnection.transform.Rotate (0, 180, 0);
-			// move the new room such that the transform matches with the last connection point
-			newRoomGO.transform.position += (currentRoomConnection.transform.position-newRoomConnectionTransform.position);
-			// just debug output, making sure that things aren't connected more than once			
-			currentRoomConnection.GetComponent<ConnectionPoint>().connectionCount++;
-			newRoomConnectionPoint.connectionCount++;
-//			newRoomConnectionPoint.renderer.enabled = false;
-			// link up the rooms in the room tree
+                // unrotate the point
+                currentRoomConnection.transform.Rotate( 0, 180, 0 );
+                // move the new room such that the transform matches with the last connection point
+                newRoomGO.transform.position += ( currentRoomConnection.transform.position - newRoomConnectionTransform.position );
+                // just debug output, making sure that things aren't connected more than once			
+                currentRoomConnection.GetComponent<ConnectionPoint>().connectionCount++;
+                newRoomConnectionPoint.connectionCount++;
+                //			newRoomConnectionPoint.renderer.enabled = false;
+                // link up the rooms in the room tree
 
-			startingRoom.ConnectRoom (currentRoomConnection, newRoom);
-			newRoom.ConnectRoom (newRoomConnectionPoint, startingRoom);
+                startingRoom.ConnectRoom( currentRoomConnection, exitRoom );
+                exitRoom.ConnectRoom( newRoomConnectionPoint, startingRoom );
+            }
+            else
+                exitRoom = startingRoom.GetRoomForExit( i );
 
 			if (depth > 0)
 			{
-				AddRoomsToDepth (newRoom, depth - 1);
+				AddRoomsToDepth (exitRoom, depth - 1);
 			}
-			// attempt to get a new open connection
-			currentRoomConnection = startingRoom.GetOpenConnection();
 		}
 	}
 	GameObject GetRoomWithConnector(ConnectionPoint.ConnectionType connectionType)
 	{
 		levelBits = TensionExtensions.Shuffle(levelBits);
 		for(int j = 0; j<levelBits.Length;j++){
+            var bit = levelBits[j];
+            bit.SetActive( true );
 			// look in the level bit and see if it has a valid connection point
-			foreach(ConnectionPoint cp in levelBits[j].GetComponentsInChildren<ConnectionPoint>()){
+			foreach(ConnectionPoint cp in bit.GetComponentsInChildren<ConnectionPoint>()){
 				Debug.Log("connects to: "+cp.t);
 				if(cp.t == connectionType){
-					return levelBits[j];
+                    bit.SetActive( false );
+					return bit;
 				}
 			}
+            bit.SetActive( false );
 		}
 		return nullObj;
 	}
@@ -141,36 +147,43 @@ public class LevelGen : MonoBehaviour {
 	void EnteredRoom(Room centeredRoom)
 	{
 		currentRoom = centeredRoom;
+        AddRoomsToDepth( currentRoom, depthToPreGen );
+
 		visited.Clear ();
 		SetLayersOnTree (centeredRoom, 0);
 	}
 	void SetLayersOnTree(Room current, int distance)
 	{
-		current.GetGameObject ().name = "distance: " + distance;
-		current.GetGameObject ().SetActive (true);
-		switch (distance)
-		{
-			case 0:
-				SetLayerRecursively (current.GetGameObject (), nearLayer);
-				SetColliderState (current.GetGameObject (), true);
-				break;
-			case 1:
-				SetLayerRecursively (current.GetGameObject (), farLayer);
-				SetColliderState (current.GetGameObject (), false);
-				break;
-			default:
-				SetLayerRecursively (current.GetGameObject (), far2Layer);
-				SetColliderState (current.GetGameObject (), false);
-				break;
-//				current.GetGameObject ().SetActive (false);
-//				break;
-		}
-		visited.Add (current);
-		foreach (Room r in current.GetRooms())
-		{
-			if(!visited.Contains(r))
-				SetLayersOnTree (r, distance + 1);
-		}
+        current.GetGameObject().name = "distance: " + distance;
+        current.GetGameObject().SetActive( true );
+        switch ( distance ) {
+        case 0:
+            SetLayerRecursively( current.GetGameObject(), nearLayer );
+            SetColliderState( current.GetGameObject(), true );
+            break;
+        case 1:
+            SetLayerRecursively( current.GetGameObject(), farLayer );
+            SetColliderState( current.GetGameObject(), false );
+            break;
+        default:
+            SetLayerRecursively( current.GetGameObject(), far2Layer );
+            SetColliderState( current.GetGameObject(), false );
+            break;
+        //				current.GetGameObject ().SetActive (false);
+        //				break;
+        }
+	
+        visited.Add (current);
+        var rooms = new Room[current.GetRooms().Count];
+        current.GetRooms().CopyTo( rooms, 0 ); // get around deleting during foreach
+        foreach ( Room r in rooms ) {
+            if ( !visited.Contains( r ) ) {
+                if ( distance <= depthToPreGen )
+                    SetLayersOnTree( r, distance + 1 );
+                else
+                    current.RemoveRoom( r );
+            }
+        }
 	}
 	public void SetLayerRecursively(GameObject go, int layer)
 	{
