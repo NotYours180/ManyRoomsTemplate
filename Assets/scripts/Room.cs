@@ -3,83 +3,77 @@ using System.Collections;
 using System.Collections.Generic;
 
 // for tree traversal of all the rooms in the world
-public class Room
+public class Room : MonoBehaviour
 {
-	GameObject root;
-	Dictionary<BoxCollider, Room> exitRooms = new Dictionary<BoxCollider, Room>();
-	List<BoxCollider> exits = new List<BoxCollider>();
+	List<ConnectionPoint> connections = new List<ConnectionPoint>();
 
-	public List<ConnectionPoint> connections = new List<ConnectionPoint>();
-
-	public Room(GameObject _root)
-	{
-		root = _root;
+	void Awake() {
 		// build the list of exits / connection points.
 		// there must be an equal number of each
-		foreach(ConnectionPoint cp in root.GetComponentsInChildren<ConnectionPoint>())
+		foreach( var cp in GetComponentsInChildren<ConnectionPoint>() )
 		{
+            cp.owner = this;
+            cp.trigger = cp.GetComponent<BoxCollider>();
 			connections.Add(cp);
-			exits.Add (cp.GetComponent<BoxCollider> ());
 		}
 	}
-	public Dictionary<BoxCollider, Room>.KeyCollection GetExits()
-	{
-		return exitRooms.Keys;
-	}
-	public Dictionary<BoxCollider, Room>.ValueCollection GetRooms()
-	{
-		return exitRooms.Values;
-	}
+
+    public ConnectionPoint[] GetConnections() {
+        return connections.ToArray();
+    }
 
 	public Room GetRoomForExit(BoxCollider bc)
 	{
-		return exitRooms [bc];
-	}
-    public Room GetRoomForExit( int exit ) {
-        return exitRooms[exits[exit]];
-    }
-    public bool IsConnectionOpen( int exit ) {
-        return ( !exitRooms.ContainsKey( exits[exit] ) );
-    }
-	public ConnectionPoint GetOpenConnection()
-	{
-		for (int i = 0; i < exits.Count; i++)
-		{
-			if (!exitRooms.ContainsKey (exits [i]))
-			{
-				Debug.Log (i);
-				return connections [i];
-			}
-		}
-		return null;
-	}
-	public void ConnectRoom(ConnectionPoint cp, Room connectedRoom){
-		for (int i = 0; i < connections.Count; i++)
-		{
-			if (connections [i] == cp)
-			{
-				exitRooms [exits [i]] = connectedRoom;
-				return;
-			}
-		}
-		Debug.Log ("couldn't find connection");
-	}
-    public void RemoveRoom( Room connectedRoom ) {
-        BoxCollider exitToRoom = null;
-        foreach ( var exit in exitRooms ) {
-            if ( exit.Value == connectedRoom ) {
-                exitToRoom = exit.Key;
-                break;
+        foreach ( var point in connections ) {
+            if ( point.trigger == bc ) {
+                if ( point.isConnected )
+                    return point.connectedTo;
+                else {
+                    Debug.LogWarning( "No room connected to exit with collider " + bc );
+                    return null;
+                }
             }
         }
-
-        if ( exitToRoom == null )
-            Debug.LogWarning( "Couldn't find room to remove" );
-
-        exitRooms.Remove( exitToRoom );
-        GameObject.Destroy( connectedRoom.GetGameObject() );
-    }
-	public GameObject GetGameObject(){
-		return root;
+        Debug.LogWarning( "No connectionpoint with trigger " + bc );
+        return null;
 	}
+
+    public Room[] GetConnectedRooms() {
+        var rooms = new List<Room>();
+        foreach ( var connector in connections ) {
+            if ( connector.isConnected )
+                rooms.Add( connector.connectedTo );
+        }
+        return rooms.ToArray();   
+    }
+
+	public ConnectionPoint GetOpenConnection()
+	{
+        foreach ( var point in connections ) {
+            if ( !point.isConnected )
+                return point;
+        }
+
+		return null;
+	}
+
+	public void ConnectRoom( ConnectionPoint cp, Room connectedRoom ){
+		if ( cp.isConnected )
+            Debug.LogError( "Already room connected at " + cp );
+
+        if ( !connections.Contains( cp ) )
+            Debug.LogError( this + " doesn't contain connection " + cp );
+
+        cp.connectedTo = connectedRoom;
+	}
+
+    public void DisconnectRoom( Room connectedRoom ) {
+        foreach ( var connection in connections ) {
+            if ( connection.connectedTo == connectedRoom ) {
+                connection.connectedTo = null;
+                return;
+            }
+        }
+        Debug.LogWarning( "Couldn't find room " + connectedRoom + " to remove" );
+    }
 }
