@@ -5,6 +5,9 @@ using System.Collections.Generic;
 // for tree traversal of all the rooms in the world
 public class Room : MonoBehaviour
 {
+    public string roomName = "REPLACE";
+    public string authorName = "ME";
+
 	List<ConnectionPoint> connections = new List<ConnectionPoint>();
 
 	void Awake() {
@@ -24,7 +27,7 @@ public class Room : MonoBehaviour
 
     void Validate() {
         if ( connections.Count == 0 )
-            Debug.LogError( "No connections marked as inUse" );
+            Debug.LogError( roomName + " : No connections marked as inUse" );
 
         int exits = 0;
         int entrances = 0;
@@ -37,10 +40,10 @@ public class Room : MonoBehaviour
 
             if ( Mathf.Abs( connection.connectionX - connection.transform.localPosition.x ) > Mathf.Epsilon ||
                 Mathf.Abs( connection.connectionZ - connection.transform.localPosition.z ) > Mathf.Epsilon )
-                Debug.LogError( "Exit was moved in the x or z dimensions" );
+                Debug.LogError( roomName + " : Exit was moved in the x or z dimensions" );
         }
         if ( exits == connections.Count || entrances == connections.Count )
-            Debug.LogError( "Connections are all marked as entrances or all marked as exits" );
+            Debug.LogError( roomName + " :Connections are all marked as entrances or all marked as exits" );
     }
 
     public ConnectionPoint[] GetConnections() {
