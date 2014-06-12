@@ -9,8 +9,8 @@ public class ConnectionPoint : MonoBehaviour
     [Tooltip( "If you care whether the player enters or exits the room here (connection points can't be all one type)")]
     public DoorType doorType;
 
-    [Tooltip( "Is this connection point used by the room? Need at least one")]
-    public bool isUsed;
+    [Tooltip( "Is this connection point used by the room? Need at least one" )]
+    public bool isUsed = true;
 
     [Header( "Don't Change Me! Used for verification" )]
     public float connectionX, connectionZ;

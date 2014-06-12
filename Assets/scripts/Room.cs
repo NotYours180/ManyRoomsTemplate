@@ -12,11 +12,36 @@ public class Room : MonoBehaviour
 		// there must be an equal number of each
 		foreach( var cp in GetComponentsInChildren<ConnectionPoint>() )
 		{
-            cp.owner = this;
-            cp.trigger = cp.GetComponent<BoxCollider>();
-			connections.Add(cp);
+            if ( cp.isUsed ) {
+                cp.owner = this;
+                cp.trigger = cp.GetComponent<BoxCollider>();
+                connections.Add( cp );
+            }
 		}
+
+        Validate();
 	}
+
+    void Validate() {
+        if ( connections.Count == 0 )
+            Debug.LogError( "No connections marked as inUse" );
+
+        int exits = 0;
+        int entrances = 0;
+
+        foreach ( var connection in connections ) {
+            if ( connection.doorType == ConnectionPoint.DoorType.ENTRANCE )
+                entrances++;
+            else if ( connection.doorType == ConnectionPoint.DoorType.EXIT )
+                exits++;
+
+            if ( Mathf.Abs( connection.connectionX - connection.transform.localPosition.x ) > Mathf.Epsilon ||
+                Mathf.Abs( connection.connectionZ - connection.transform.localPosition.z ) > Mathf.Epsilon )
+                Debug.LogError( "Exit was moved in the x or z dimensions" );
+        }
+        if ( exits == connections.Count || entrances == connections.Count )
+            Debug.LogError( "Connections are all marked as entrances or all marked as exits" );
+    }
 
     public ConnectionPoint[] GetConnections() {
         return connections.ToArray();

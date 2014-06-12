@@ -11,6 +11,8 @@ public class LevelGen : MonoBehaviour {
 	// the rooms that we will build the building out of
 	public Room[] roomPrefabs;
 
+    public GameObject player;
+
 	Room currentRoom;
 	int nearLayer, farLayer, far2Layer;
 
@@ -145,11 +147,13 @@ public class LevelGen : MonoBehaviour {
 	List<Room> visited = new List<Room>();
 	void EnteredRoom(Room centeredRoom)
 	{
+        currentRoom.SendMessage( "RoomLeft", player );
 		currentRoom = centeredRoom;
         AddRoomsToDepth( currentRoom, depthToPreGen );
 
 		visited.Clear ();
 		SetLayersOnTree (centeredRoom, 0);
+        currentRoom.SendMessage( "RoomEntered", player );
 	}
 
 	void SetLayersOnTree(Room current, int distance)
