@@ -97,7 +97,8 @@ public class LevelGen : MonoBehaviour {
                 // move the new room such that the transform matches with the last connection point
                 connector.transform.position += ( currentRoomConnection.transform.position - connectorEndTransform.position );
                 exitRoom.transform.position += ( connectorOtherEndTransform.position - newRoomConnectionTransform.position );
-                
+                exitRoom.CalcBounds();
+
                 //			newRoomConnectionPoint.renderer.enabled = false;
                 // link up the rooms in the room tree
 
@@ -150,13 +151,13 @@ public class LevelGen : MonoBehaviour {
 	{
 		// see if the player has entered a new room
         Vector3 point = Camera.main.transform.position;
-        if ( !currentRoom.collider.bounds.Contains( point ) ) {
+        if ( !currentRoom.bounds.Contains( point ) ) {
             Debug.Log( "Player leaving current room" );
-            Debug.Log( currentRoom.collider.bounds );
+            Debug.Log( currentRoom.bounds );
             Debug.Log( point );
             foreach ( var connection in currentRoom.GetConnections() ) {
-                Debug.Log( connection.connectedTo.collider.bounds );
-                if ( connection.connectedTo.collider.bounds.Contains( point ) ) {
+                Debug.Log( connection.connectedTo.bounds );
+                if ( connection.connectedTo.bounds.Contains( point ) ) {
                     Debug.Log( "Player now in " + connection.connectedTo );
                     EnteredRoom( connection.connectedTo );
                 }
@@ -211,8 +212,9 @@ public class LevelGen : MonoBehaviour {
                     SetLayersOnTree( connection.connectedTo, distance + 1 );
                 }
                 else {
+                    var roomObj = connection.connectedTo.gameObject;
                     current.DisconnectRoom( connection.connectedTo );
-                    Destroy( connection.connectedTo );
+                    Destroy( roomObj );
                 }
             }
         }

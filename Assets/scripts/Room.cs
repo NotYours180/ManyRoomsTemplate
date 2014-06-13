@@ -9,6 +9,7 @@ public class Room : MonoBehaviour
     public string authorName = "ME";
 
 	List<ConnectionPoint> connections = new List<ConnectionPoint>();
+    public Bounds bounds { get; private set; }
 
 	void Awake() {
 		// build the list of exits / connection points.
@@ -20,7 +21,7 @@ public class Room : MonoBehaviour
                 connections.Add( cp );
             }
 		}
-
+        CalcBounds();
         Validate();
 	}
 
@@ -91,5 +92,26 @@ public class Room : MonoBehaviour
             }
         }
         Debug.LogWarning( "Couldn't find room " + connectedRoom + " to remove" );
+    }
+
+    public void CalcBounds() {
+        // since unity bounds are broken?
+
+        bounds = new Bounds( transform.position + Vector3.up * .5f, Vector3.one );
+        foreach ( var rend in GetComponentsInChildren<Renderer>() ) {
+            Vector3 newMin = new Vector3(
+                Mathf.Min( bounds.min.x, rend.bounds.min.x ),
+                Mathf.Min( bounds.min.y, rend.bounds.min.y ),
+                Mathf.Min( bounds.min.z, rend.bounds.min.z )
+                );
+            Vector3 newMax = new Vector3(
+                Mathf.Max( bounds.max.x, rend.bounds.max.x ),
+                Mathf.Max( bounds.max.y, rend.bounds.max.y ),
+                Mathf.Max( bounds.max.z, rend.bounds.max.z )
+                );
+            Vector3 centre = ( newMin + newMax ) * .5f;
+            Vector3 size = newMax - newMin;
+            bounds = new Bounds( centre, size );
+        }
     }
 }
