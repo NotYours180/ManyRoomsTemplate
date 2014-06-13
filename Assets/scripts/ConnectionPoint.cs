@@ -24,9 +24,6 @@ public class ConnectionPoint : MonoBehaviour
     [HideInInspector]
     public Connector connector;
 
-    [HideInInspector]
-    public BoxCollider trigger;
-
     public bool isConnected { get { return connectedTo; } }
 
     public enum ConnectionType {

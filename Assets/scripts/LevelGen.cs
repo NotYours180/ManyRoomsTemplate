@@ -38,9 +38,9 @@ public class LevelGen : MonoBehaviour {
         }
 
 		// add the first room, and its connections
-		currentRoom = (Room)Instantiate( roomPrefabs[Random.Range(0, roomPrefabs.Length)] );
-        currentRoom.gameObject.SetActive( true );
-		EnteredRoom( currentRoom );
+		var newRoom = (Room)Instantiate( roomPrefabs[Random.Range(0, roomPrefabs.Length)] );
+        newRoom.gameObject.SetActive( true );
+		EnteredRoom( newRoom );
 	}
 
 	void AddRoomsToDepth( Room startingRoom, int depth ){
@@ -169,7 +169,8 @@ public class LevelGen : MonoBehaviour {
 	void EnteredRoom(Room centeredRoom)
 	{
         enteringRoom = true;
-        currentRoom.SendMessage( "RoomLeft", player, SendMessageOptions.DontRequireReceiver );
+        if ( currentRoom )
+            currentRoom.SendMessage( "RoomLeft", player, SendMessageOptions.DontRequireReceiver );
 		currentRoom = centeredRoom;
         AddRoomsToDepth( currentRoom, depthToPreGen );
 

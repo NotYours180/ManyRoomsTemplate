@@ -17,7 +17,6 @@ public class Room : MonoBehaviour
 		{
             if ( cp.isUsed ) {
                 cp.owner = this;
-                cp.trigger = cp.GetComponent<BoxCollider>();
                 connections.Add( cp );
             }
 		}
@@ -49,22 +48,6 @@ public class Room : MonoBehaviour
     public ConnectionPoint[] GetConnections() {
         return connections.ToArray();
     }
-
-	public Room GetRoomForExit(BoxCollider bc)
-	{
-        foreach ( var point in connections ) {
-            if ( point.trigger == bc ) {
-                if ( point.isConnected )
-                    return point.connectedTo;
-                else {
-                    Debug.LogWarning( "No room connected to exit with collider " + bc );
-                    return null;
-                }
-            }
-        }
-        Debug.LogWarning( "No connectionpoint with trigger " + bc );
-        return null;
-	}
 
     public Room[] GetConnectedRooms() {
         var rooms = new List<Room>();
