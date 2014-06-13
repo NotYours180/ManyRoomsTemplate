@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections;
-
+using System.Collections.Generic;
 	// public void Shuffle(List<int> list)
 	// {
 	// 	int n = list.Count;
@@ -15,8 +15,8 @@ using System.Collections;
 
 public static class TensionExtensions
 {
-	public static T[] Shuffle<T>(T[] toShuffle){
-		int n = toShuffle.Length;
+	public static void Shuffle<T>( this IList<T> toShuffle ){
+		int n = toShuffle.Count;
 		while (n>1){
 			n--;
 			int k = Random.Range(0, n+1);
@@ -24,8 +24,8 @@ public static class TensionExtensions
 			toShuffle[k] = toShuffle[n];
 			toShuffle[n] = val;
 		}
-		return toShuffle;
 	}
+
 	#region Vector2 extensions
 	public static Vector2 Rotate(this Vector2 v, float a){
 		float px = v.x*Mathf.Cos(a) - v.y*Mathf.Sin(a);

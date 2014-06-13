@@ -3,83 +3,93 @@ using System.Collections;
 using System.Collections.Generic;
 
 // for tree traversal of all the rooms in the world
-public class Room
+public class Room : MonoBehaviour
 {
-	GameObject root;
-	Dictionary<BoxCollider, Room> exitRooms = new Dictionary<BoxCollider, Room>();
-	List<BoxCollider> exits = new List<BoxCollider>();
+    public string roomName = "REPLACE";
+    public string authorName = "ME";
 
-	public List<ConnectionPoint> connections = new List<ConnectionPoint>();
+	List<ConnectionPoint> connections = new List<ConnectionPoint>();
 
-	public Room(GameObject _root)
-	{
-		root = _root;
+	void Awake() {
 		// build the list of exits / connection points.
 		// there must be an equal number of each
-		foreach(ConnectionPoint cp in root.GetComponentsInChildren<ConnectionPoint>())
+		foreach( var cp in GetComponentsInChildren<ConnectionPoint>() )
 		{
-			connections.Add(cp);
-			exits.Add (cp.GetComponent<BoxCollider> ());
+            if ( cp.isUsed ) {
+                cp.owner = this;
+                connections.Add( cp );
+            }
 		}
-	}
-	public Dictionary<BoxCollider, Room>.KeyCollection GetExits()
-	{
-		return exitRooms.Keys;
-	}
-	public Dictionary<BoxCollider, Room>.ValueCollection GetRooms()
-	{
-		return exitRooms.Values;
+
+        Validate();
 	}
 
-	public Room GetRoomForExit(BoxCollider bc)
-	{
-		return exitRooms [bc];
-	}
-    public Room GetRoomForExit( int exit ) {
-        return exitRooms[exits[exit]];
+    void Validate() {
+        if ( connections.Count == 0 )
+            Debug.LogError( roomName + " : No connections marked as inUse" );
+
+        int exits = 0;
+        int entrances = 0;
+
+        foreach ( var connection in connections ) {
+            if ( connection.doorType == ConnectionPoint.DoorType.ENTRANCE )
+                entrances++;
+            else if ( connection.doorType == ConnectionPoint.DoorType.EXIT )
+                exits++;
+
+            if ( Mathf.Abs( connection.connectionX - connection.transform.localPosition.x ) > Mathf.Epsilon ||
+                Mathf.Abs( connection.connectionZ - connection.transform.localPosition.z ) > Mathf.Epsilon )
+                Debug.LogError( roomName + " : Exit was moved in the x or z dimensions" );
+        }
+        if ( exits == connections.Count || entrances == connections.Count )
+            Debug.LogError( roomName + " :Connections are all marked as entrances or all marked as exits" );
     }
-    public bool IsConnectionOpen( int exit ) {
-        return ( !exitRooms.ContainsKey( exits[exit] ) );
+
+    public ConnectionPoint[] GetConnections() {
+        return connections.ToArray();
     }
+
+    public Room[] GetConnectedRooms() {
+        var rooms = new List<Room>();
+        foreach ( var connector in connections ) {
+            if ( connector.isConnected )
+                rooms.Add( connector.connectedTo );
+        }
+        return rooms.ToArray();   
+    }
+
 	public ConnectionPoint GetOpenConnection()
 	{
-		for (int i = 0; i < exits.Count; i++)
-		{
-			if (!exitRooms.ContainsKey (exits [i]))
-			{
-				Debug.Log (i);
-				return connections [i];
-			}
-		}
-		return null;
-	}
-	public void ConnectRoom(ConnectionPoint cp, Room connectedRoom){
-		for (int i = 0; i < connections.Count; i++)
-		{
-			if (connections [i] == cp)
-			{
-				exitRooms [exits [i]] = connectedRoom;
-				return;
-			}
-		}
-		Debug.Log ("couldn't find connection");
-	}
-    public void RemoveRoom( Room connectedRoom ) {
-        BoxCollider exitToRoom = null;
-        foreach ( var exit in exitRooms ) {
-            if ( exit.Value == connectedRoom ) {
-                exitToRoom = exit.Key;
-                break;
-            }
+        foreach ( var point in connections ) {
+            if ( !point.isConnected )
+                return point;
         }
 
-        if ( exitToRoom == null )
-            Debug.LogWarning( "Couldn't find room to remove" );
-
-        exitRooms.Remove( exitToRoom );
-        GameObject.Destroy( connectedRoom.GetGameObject() );
-    }
-	public GameObject GetGameObject(){
-		return root;
+		return null;
 	}
+
+	public void ConnectRoom( ConnectionPoint cp, Connector connector, Room connectedRoom ){
+		if ( cp.isConnected )
+            Debug.LogError( "Already room connected at " + cp );
+
+        if ( !connections.Contains( cp ) )
+            Debug.LogError( this + " doesn't contain connection " + cp );
+
+        cp.connectedTo = connectedRoom;
+        cp.connector = connector;
+	}
+
+    public void DisconnectRoom( Room connectedRoom ) {
+        foreach ( var connection in connections ) {
+            if ( connection.connectedTo == connectedRoom ) {
+                connection.connectedTo = null;
+                if ( connection.connector ) {
+                    Destroy( connection.connector.gameObject );
+                    connection.connector = null;
+                }
+                return;
+            }
+        }
+        Debug.LogWarning( "Couldn't find room " + connectedRoom + " to remove" );
+    }
 }
