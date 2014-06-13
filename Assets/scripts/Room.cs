@@ -85,7 +85,7 @@ public class Room : MonoBehaviour
 		return null;
 	}
 
-	public void ConnectRoom( ConnectionPoint cp, Room connectedRoom ){
+	public void ConnectRoom( ConnectionPoint cp, Connector connector, Room connectedRoom ){
 		if ( cp.isConnected )
             Debug.LogError( "Already room connected at " + cp );
 
@@ -93,12 +93,17 @@ public class Room : MonoBehaviour
             Debug.LogError( this + " doesn't contain connection " + cp );
 
         cp.connectedTo = connectedRoom;
+        cp.connector = connector;
 	}
 
     public void DisconnectRoom( Room connectedRoom ) {
         foreach ( var connection in connections ) {
             if ( connection.connectedTo == connectedRoom ) {
                 connection.connectedTo = null;
+                if ( connection.connector ) {
+                    Destroy( connection.connector.gameObject );
+                    connection.connector = null;
+                }
                 return;
             }
         }

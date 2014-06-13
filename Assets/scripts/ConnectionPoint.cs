@@ -22,6 +22,9 @@ public class ConnectionPoint : MonoBehaviour
     public Room connectedTo;
 
     [HideInInspector]
+    public Connector connector;
+
+    [HideInInspector]
     public BoxCollider trigger;
 
     public bool isConnected { get { return connectedTo; } }
