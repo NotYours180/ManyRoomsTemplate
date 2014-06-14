@@ -34,7 +34,7 @@ public class Exporter : EditorWindow {
             if ( GUILayout.Button( "Validate & export room" ) ) {
                 var roomObj = (Room)PrefabUtility.InstantiatePrefab( roomPrefab );
                 roomValid = roomObj.Validate();
-                //DestroyImmediate( roomObj.gameObject );
+                DestroyImmediate( roomObj.gameObject );
 
                 if ( roomValid ) {
                     var roomPaths = new List<string>();
