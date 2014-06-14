@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 7523ebada420345b982dc32926bfa65a
+guid: f1cb4c8f3afec427a9921bd8e073d22f
 ModelImporter:
   serializedVersion: 16
   fileIDToRecycleName:
@@ -7,7 +7,7 @@ ModelImporter:
     400000: //RootNode
     2300000: //RootNode
     3300000: //RootNode
-    4300000: door
+    4300000: hall
     7400000: Default Take
     9500000: //RootNode
   materials:
@@ -43,9 +43,9 @@ ModelImporter:
     secondaryUVHardAngle: 88
     secondaryUVPackMargin: 4
   tangentSpace:
-    normalSmoothAngle: 60
+    normalSmoothAngle: 0
     splitTangentsAcrossUV: 1
-    normalImportMode: 0
+    normalImportMode: 1
     tangentImportMode: 1
   importAnimation: 1
   copyAvatar: 0
