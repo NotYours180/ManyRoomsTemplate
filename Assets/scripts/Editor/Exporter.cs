@@ -15,7 +15,7 @@ public class Exporter : EditorWindow {
     Connector connectorObj;
 
     // Add menu named "My Window" to the Window menu
-    [MenuItem( "ManyHouses/Export" )]
+    [MenuItem( "Many Rooms/Export" )]
     static void Init() {
         // Get existing open window or if none, make a new one:
         var window = (Exporter)EditorWindow.GetWindow<Exporter>();
