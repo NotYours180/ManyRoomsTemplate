@@ -8,10 +8,13 @@ public class Room : MonoBehaviour
     public string roomName = "REPLACE";
     public string authorName = "ME";
 
-	List<ConnectionPoint> connections = new List<ConnectionPoint>();
+	List<Doorway> connections = new List<Doorway>();
     public Bounds bounds { get; private set; }
 
 	void Awake() {
+        var defaultWalls = transform.Find( "default" );
+        if ( defaultWalls )
+            Destroy( defaultWalls.gameObject );
         Validate();
 	}
 
@@ -19,7 +22,7 @@ public class Room : MonoBehaviour
         // build the list of exits / connection points.
         // there must be an equal number of each
         connections.Clear();
-        foreach ( var cp in GetComponentsInChildren<ConnectionPoint>() ) {
+        foreach ( var cp in GetComponentsInChildren<Doorway>() ) {
             if ( cp.isUsed ) {
                 cp.owner = this;
                 connections.Add( cp );
@@ -35,9 +38,9 @@ public class Room : MonoBehaviour
         int entrances = 0;
 
         foreach ( var connection in connections ) {
-            if ( connection.doorType == ConnectionPoint.DoorType.ENTRANCE )
+            if ( connection.doorType == Doorway.DoorType.ENTRANCE )
                 entrances++;
-            else if ( connection.doorType == ConnectionPoint.DoorType.EXIT )
+            else if ( connection.doorType == Doorway.DoorType.EXIT )
                 exits++;
 
             if ( Mathf.Abs( connection.connectionX - connection.transform.localPosition.x ) > Mathf.Epsilon ||
@@ -55,7 +58,7 @@ public class Room : MonoBehaviour
         return true;
     }
 
-    public ConnectionPoint[] GetConnections() {
+    public Doorway[] GetConnections() {
         return connections.ToArray();
     }
 
@@ -68,7 +71,7 @@ public class Room : MonoBehaviour
         return rooms.ToArray();   
     }
 
-	public ConnectionPoint GetOpenConnection()
+	public Doorway GetOpenConnection()
 	{
         foreach ( var point in connections ) {
             if ( !point.isConnected )
@@ -78,7 +81,7 @@ public class Room : MonoBehaviour
 		return null;
 	}
 
-	public void ConnectRoom( ConnectionPoint cp, Connector connector, Room connectedRoom ){
+	public void ConnectRoom( Doorway cp, Connector connector, Room connectedRoom ){
 		if ( cp.isConnected )
             Debug.LogError( "Already room connected at " + cp );
 

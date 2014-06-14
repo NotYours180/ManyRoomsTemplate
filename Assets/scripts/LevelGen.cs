@@ -57,10 +57,10 @@ public class LevelGen : MonoBehaviour {
                 // need to find the connection point
                 var cps = exitRoom.GetConnections();
                 cps.Shuffle();
-                ConnectionPoint newRoomConnectionPoint = null;
+                Doorway newRoomConnectionPoint = null;
                 foreach ( var otherConn in cps ) {
-                    if ( otherConn.doorType != ConnectionPoint.DoorType.EXIT && 
-                        ( currentRoomConnection.connectionType == ConnectionPoint.ConnectionType.ANY || otherConn.connectionType == ConnectionPoint.ConnectionType.ANY || otherConn.connectionType == currentRoomConnection.connectionType ) ) {
+                    if ( otherConn.doorType != Doorway.DoorType.EXIT && 
+                        ( currentRoomConnection.connectionType == Doorway.ConnectionType.ANY || otherConn.connectionType == Doorway.ConnectionType.ANY || otherConn.connectionType == currentRoomConnection.connectionType ) ) {
                         newRoomConnectionPoint = otherConn;
                         break;
                     }
@@ -70,7 +70,7 @@ public class LevelGen : MonoBehaviour {
 
                 // get a connector
                 Connector connectorPrefab;
-                if ( currentRoomConnection.connectionType != ConnectionPoint.ConnectionType.ANY )
+                if ( currentRoomConnection.connectionType != Doorway.ConnectionType.ANY )
                     connectorPrefab = GetConnectorForConnectionType( currentRoomConnection.connectionType ); // make sure connector can go with connections
                 else
                     connectorPrefab = GetConnectorForConnectionType( newRoomConnectionPoint.connectionType );
@@ -111,19 +111,19 @@ public class LevelGen : MonoBehaviour {
 		}
 	}
 
-	Room GetRoomToConnectWith(ConnectionPoint.ConnectionType connectionType)
+	Room GetRoomToConnectWith(Doorway.ConnectionType connectionType)
 	{
         roomPrefabs.Shuffle();
 		for(int j = 0; j < roomPrefabs.Length; j++) {
             var bit = roomPrefabs[j];
-            if ( connectionType == ConnectionPoint.ConnectionType.ANY )
+            if ( connectionType == Doorway.ConnectionType.ANY )
                 return bit;
 
             var connectors = bit.GetConnections();
 			// look in the level bit and see if it has a valid connection point
 			foreach( var cp in connectors ) {
 				Debug.Log("connects to: "+cp.connectionType);
-				if ( cp.connectionType == ConnectionPoint.ConnectionType.ANY ||
+				if ( cp.connectionType == Doorway.ConnectionType.ANY ||
                     cp.connectionType == connectionType ){
 					return bit;
 				}
@@ -132,14 +132,14 @@ public class LevelGen : MonoBehaviour {
 		return null;
 	}
 
-    Connector GetConnectorForConnectionType( ConnectionPoint.ConnectionType connectionType ) {
+    Connector GetConnectorForConnectionType( Doorway.ConnectionType connectionType ) {
         connectorPrefabs.Shuffle();
         foreach ( var connector in connectorPrefabs ) {
-            if ( connectionType == ConnectionPoint.ConnectionType.ANY ) 
+            if ( connectionType == Doorway.ConnectionType.ANY ) 
                 return connector;
 
-            if ( connectionType == ConnectionPoint.ConnectionType.DOOR && ( connector.end1 == null != connector.end2 == null ) ||
-                connectionType == ConnectionPoint.ConnectionType.HALLWAY && connector.end1 != null && connector.end2 != null )
+            if ( connectionType == Doorway.ConnectionType.DOOR && ( connector.end1 == null != connector.end2 == null ) ||
+                connectionType == Doorway.ConnectionType.HALLWAY && connector.end1 != null && connector.end2 != null )
                 return connector;
         }
         Debug.LogWarning( "No connector found to fit connection type " + connectionType );
@@ -183,7 +183,7 @@ public class LevelGen : MonoBehaviour {
 	void SetLayersOnTree(Room current, int distance)
 	{
         visited.Add( current );
-        var unvisitedConnections = new List<ConnectionPoint>();
+        var unvisitedConnections = new List<Doorway>();
         foreach ( var connection in current.GetConnections() ) {
             if ( !visited.Contains( connection.connectedTo ) )
                 unvisitedConnections.Add( connection );
