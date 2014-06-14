@@ -12,23 +12,25 @@ public class Room : MonoBehaviour
     public Bounds bounds { get; private set; }
 
 	void Awake() {
-		// build the list of exits / connection points.
-		// there must be an equal number of each
-		foreach( var cp in GetComponentsInChildren<ConnectionPoint>() )
-		{
+        Validate();
+	}
+
+    public bool Validate() {
+        // build the list of exits / connection points.
+        // there must be an equal number of each
+        connections.Clear();
+        foreach ( var cp in GetComponentsInChildren<ConnectionPoint>() ) {
             if ( cp.isUsed ) {
                 cp.owner = this;
                 connections.Add( cp );
             }
-		}
+        }
         CalcBounds();
-        Validate();
-	}
 
-    void Validate() {
-        if ( connections.Count == 0 )
-            Debug.LogError( roomName + " : No connections marked as inUse" );
-
+        if ( connections.Count == 0 ) {
+            Debug.LogError( roomName + " : No connections marked as is used" );
+            return false;
+        }
         int exits = 0;
         int entrances = 0;
 
@@ -39,11 +41,18 @@ public class Room : MonoBehaviour
                 exits++;
 
             if ( Mathf.Abs( connection.connectionX - connection.transform.localPosition.x ) > Mathf.Epsilon ||
-                Mathf.Abs( connection.connectionZ - connection.transform.localPosition.z ) > Mathf.Epsilon )
+                Mathf.Abs( connection.connectionZ - connection.transform.localPosition.z ) > Mathf.Epsilon ) {
                 Debug.LogError( roomName + " : Exit was moved in the x or z dimensions" );
+                return false;
+            }
         }
-        if ( exits == connections.Count || entrances == connections.Count )
+        if ( exits == connections.Count || entrances == connections.Count ) {
             Debug.LogError( roomName + " :Connections are all marked as entrances or all marked as exits" );
+            return false;
+        }
+
+        Debug.Log( "Room " + roomName + " validated!" );
+        return true;
     }
 
     public ConnectionPoint[] GetConnections() {
