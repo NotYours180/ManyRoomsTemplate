@@ -12,7 +12,7 @@ public class Room : MonoBehaviour
     public Bounds bounds { get; private set; }
 
 	void Awake() {
-        var defaultWalls = transform.Find( "default" );
+        var defaultWalls = transform.Find( "boundary" );
         if ( defaultWalls )
             Destroy( defaultWalls.gameObject );
         Validate();

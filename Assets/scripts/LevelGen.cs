@@ -49,24 +49,13 @@ public class LevelGen : MonoBehaviour {
             if ( currentRoomConnection.isConnected )
                 exitRoom = currentRoomConnection.connectedTo;
             else {
-                var nextRoomPrefab = GetRoomToConnectWith( currentRoomConnection.connectionType );
                 // instance the next room
-                exitRoom = (Room)Instantiate( nextRoomPrefab );
+                exitRoom = (Room)Instantiate( GetRoom() );
                 exitRoom.gameObject.SetActive( true );
 
                 // need to find the connection point
                 var cps = exitRoom.GetConnections();
-                cps.Shuffle();
-                Doorway newRoomConnectionPoint = null;
-                foreach ( var otherConn in cps ) {
-                    if ( otherConn.doorType != Doorway.DoorType.EXIT && 
-                        ( currentRoomConnection.connectionType == Doorway.ConnectionType.ANY || otherConn.connectionType == Doorway.ConnectionType.ANY || otherConn.connectionType == currentRoomConnection.connectionType ) ) {
-                        newRoomConnectionPoint = otherConn;
-                        break;
-                    }
-                }
-                if ( newRoomConnectionPoint == null )
-                    Debug.LogError( "No valid connections found" );
+                Doorway newRoomConnectionPoint = cps[Random.Range( 0, cps.Length )];
                 
                 // rotate / translate the new room and connector to match the transform of the existing exit
                 Transform newRoomConnectionTransform = newRoomConnectionPoint.transform;
@@ -111,25 +100,9 @@ public class LevelGen : MonoBehaviour {
 		}
 	}
 
-	Room GetRoomToConnectWith(Doorway.ConnectionType connectionType)
+	Room GetRoom()
 	{
-        roomPrefabs.Shuffle();
-		for(int j = 0; j < roomPrefabs.Length; j++) {
-            var bit = roomPrefabs[j];
-            if ( connectionType == Doorway.ConnectionType.ANY )
-                return bit;
-
-            var connectors = bit.GetConnections();
-			// look in the level bit and see if it has a valid connection point
-			foreach( var cp in connectors ) {
-				Debug.Log("connects to: "+cp.connectionType);
-				if ( cp.connectionType == Doorway.ConnectionType.ANY ||
-                    cp.connectionType == connectionType ){
-					return bit;
-				}
-			}
-		}
-		return null;
+        return roomPrefabs[Random.Range( 0, roomPrefabs.Length )];
 	}
 
     Connector GetConnector() {
