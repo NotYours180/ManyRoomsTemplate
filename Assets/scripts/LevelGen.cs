@@ -10,7 +10,7 @@ public class LevelGen : MonoBehaviour {
 
 	// the rooms that we will build the building out of
 	public Room[] roomPrefabs;
-    public Connector[] connectorPrefabs;
+    public Connector[] hallwayPrefabs;
 
     public GameObject player;
 
@@ -49,36 +49,14 @@ public class LevelGen : MonoBehaviour {
             if ( currentRoomConnection.isConnected )
                 exitRoom = currentRoomConnection.connectedTo;
             else {
-                var nextRoomPrefab = GetRoomToConnectWith( currentRoomConnection.connectionType );
                 // instance the next room
-                exitRoom = (Room)Instantiate( nextRoomPrefab );
+                exitRoom = (Room)Instantiate( GetRoom() );
                 exitRoom.gameObject.SetActive( true );
 
                 // need to find the connection point
                 var cps = exitRoom.GetConnections();
-                cps.Shuffle();
-                ConnectionPoint newRoomConnectionPoint = null;
-                foreach ( var otherConn in cps ) {
-                    if ( otherConn.doorType != ConnectionPoint.DoorType.EXIT && 
-                        ( currentRoomConnection.connectionType == ConnectionPoint.ConnectionType.ANY || otherConn.connectionType == ConnectionPoint.ConnectionType.ANY || otherConn.connectionType == currentRoomConnection.connectionType ) ) {
-                        newRoomConnectionPoint = otherConn;
-                        break;
-                    }
-                }
-                if ( newRoomConnectionPoint == null )
-                    Debug.LogError( "No valid connections found" );
-
-                // get a connector
-                Connector connectorPrefab;
-                if ( currentRoomConnection.connectionType != ConnectionPoint.ConnectionType.ANY )
-                    connectorPrefab = GetConnectorForConnectionType( currentRoomConnection.connectionType ); // make sure connector can go with connections
-                else
-                    connectorPrefab = GetConnectorForConnectionType( newRoomConnectionPoint.connectionType );
+                Doorway newRoomConnectionPoint = cps[Random.Range( 0, cps.Length )];
                 
-                var connector = (Connector)Instantiate( connectorPrefab );
-                Transform connectorEndTransform = connector.end1 != null ? connector.end1 : connector.end2;
-                Transform connectorOtherEndTransform = connector.end2 != null ? connector.end2 : connector.end1;
-
                 // rotate / translate the new room and connector to match the transform of the existing exit
                 Transform newRoomConnectionTransform = newRoomConnectionPoint.transform;
                 currentRoomConnection.transform.Rotate( 0, 180, 0 );
@@ -86,18 +64,30 @@ public class LevelGen : MonoBehaviour {
                 // need to do this a few times to make sure all the axis line up
                 // end with the up axis, as that is the most important one. I can't help but feel like there is a better way to handle this
                 exitRoom.transform.rotation *= Quaternion.FromToRotation( newRoomConnectionTransform.forward, currentRoomConnection.transform.forward );
-                connector.transform.rotation *= Quaternion.FromToRotation( connectorEndTransform.forward, currentRoomConnection.transform.forward );
                 exitRoom.transform.rotation *= Quaternion.FromToRotation( newRoomConnectionTransform.right, currentRoomConnection.transform.right );
-                connector.transform.rotation *= Quaternion.FromToRotation( connectorEndTransform.right, currentRoomConnection.transform.right );
                 exitRoom.transform.rotation *= Quaternion.FromToRotation( newRoomConnectionTransform.up, currentRoomConnection.transform.up );
-                connector.transform.rotation *= Quaternion.FromToRotation( connectorEndTransform.up, currentRoomConnection.transform.up );
+                // move the new room such that the transform matches with the last connection point
+                exitRoom.transform.position += ( currentRoomConnection.transform.position - newRoomConnectionTransform.position );
+
+                // get a connector, sometimes
+                Connector connector = null;
+                if ( Random.value < .5f ) {
+                    connector = (Connector)Instantiate( GetConnector() );
+                    bool startEnd1 = Random.value < .5f;
+                    Transform connectorEndTransform = startEnd1 ? connector.end1 : connector.end2;
+                    Transform connectorOtherEndTransform = startEnd1 ? connector.end2 : connector.end1;
+                    connector.transform.rotation *= Quaternion.FromToRotation( connectorEndTransform.forward, currentRoomConnection.transform.forward );
+                    connector.transform.rotation *= Quaternion.FromToRotation( connectorEndTransform.right, currentRoomConnection.transform.right );
+                    connector.transform.rotation *= Quaternion.FromToRotation( connectorEndTransform.up, currentRoomConnection.transform.up );
+
+                    connector.transform.position += ( currentRoomConnection.transform.position - connectorEndTransform.position );
+                    exitRoom.transform.position += ( connectorOtherEndTransform.position - newRoomConnectionTransform.position );
+                }
+                    
+                exitRoom.CalcBounds();
 
                 // unrotate the point
                 currentRoomConnection.transform.Rotate( 0, 180, 0 );
-                // move the new room such that the transform matches with the last connection point
-                connector.transform.position += ( currentRoomConnection.transform.position - connectorEndTransform.position );
-                exitRoom.transform.position += ( connectorOtherEndTransform.position - newRoomConnectionTransform.position );
-                
                 //			newRoomConnectionPoint.renderer.enabled = false;
                 // link up the rooms in the room tree
 
@@ -110,39 +100,13 @@ public class LevelGen : MonoBehaviour {
 		}
 	}
 
-	Room GetRoomToConnectWith(ConnectionPoint.ConnectionType connectionType)
+	Room GetRoom()
 	{
-        roomPrefabs.Shuffle();
-		for(int j = 0; j < roomPrefabs.Length; j++) {
-            var bit = roomPrefabs[j];
-            if ( connectionType == ConnectionPoint.ConnectionType.ANY )
-                return bit;
-
-            var connectors = bit.GetConnections();
-			// look in the level bit and see if it has a valid connection point
-			foreach( var cp in connectors ) {
-				Debug.Log("connects to: "+cp.connectionType);
-				if ( cp.connectionType == ConnectionPoint.ConnectionType.ANY ||
-                    cp.connectionType == connectionType ){
-					return bit;
-				}
-			}
-		}
-		return null;
+        return roomPrefabs[Random.Range( 0, roomPrefabs.Length )];
 	}
 
-    Connector GetConnectorForConnectionType( ConnectionPoint.ConnectionType connectionType ) {
-        connectorPrefabs.Shuffle();
-        foreach ( var connector in connectorPrefabs ) {
-            if ( connectionType == ConnectionPoint.ConnectionType.ANY ) 
-                return connector;
-
-            if ( connectionType == ConnectionPoint.ConnectionType.DOOR && ( connector.end1 == null != connector.end2 == null ) ||
-                connectionType == ConnectionPoint.ConnectionType.HALLWAY && connector.end1 != null && connector.end2 != null )
-                return connector;
-        }
-        Debug.LogWarning( "No connector found to fit connection type " + connectionType );
-        return null;
+    Connector GetConnector() {
+        return hallwayPrefabs[Random.Range( 0, hallwayPrefabs.Length )];
     }
 
 	// Update is called once per frame
@@ -150,13 +114,13 @@ public class LevelGen : MonoBehaviour {
 	{
 		// see if the player has entered a new room
         Vector3 point = Camera.main.transform.position;
-        if ( !currentRoom.collider.bounds.Contains( point ) ) {
+        if ( !currentRoom.bounds.Contains( point ) ) {
             Debug.Log( "Player leaving current room" );
-            Debug.Log( currentRoom.collider.bounds );
+            Debug.Log( currentRoom.bounds );
             Debug.Log( point );
             foreach ( var connection in currentRoom.GetConnections() ) {
-                Debug.Log( connection.connectedTo.collider.bounds );
-                if ( connection.connectedTo.collider.bounds.Contains( point ) ) {
+                Debug.Log( connection.connectedTo.bounds );
+                if ( connection.connectedTo.bounds.Contains( point ) ) {
                     Debug.Log( "Player now in " + connection.connectedTo );
                     EnteredRoom( connection.connectedTo );
                 }
@@ -182,7 +146,7 @@ public class LevelGen : MonoBehaviour {
 	void SetLayersOnTree(Room current, int distance)
 	{
         visited.Add( current );
-        var unvisitedConnections = new List<ConnectionPoint>();
+        var unvisitedConnections = new List<Doorway>();
         foreach ( var connection in current.GetConnections() ) {
             if ( !visited.Contains( connection.connectedTo ) )
                 unvisitedConnections.Add( connection );
@@ -201,18 +165,22 @@ public class LevelGen : MonoBehaviour {
 
         SetLayerRecursively( current.gameObject, layer );
         SetColliderState( current.gameObject, distance < 2 );
+        SetLightState( current.gameObject, distance == 0 );
         foreach ( var connection in unvisitedConnections ) {
             if ( connection.isConnected ) {
 
                 if ( distance <= depthToPreGen ) {
-                    SetLayerRecursively( connection.connector.gameObject, layer );
-                    SetColliderState( connection.connector.gameObject, distance < 2 );
-
+                    if ( connection.connector ) {
+                        SetLayerRecursively( connection.connector.gameObject, layer );
+                        SetColliderState( connection.connector.gameObject, distance < 2 );
+                        SetLightState( connection.connector.gameObject, distance == 0 );
+                    }
                     SetLayersOnTree( connection.connectedTo, distance + 1 );
                 }
                 else {
+                    var roomObj = connection.connectedTo.gameObject;
                     current.DisconnectRoom( connection.connectedTo );
-                    Destroy( connection.connectedTo );
+                    Destroy( roomObj );
                 }
             }
         }
@@ -234,4 +202,9 @@ public class LevelGen : MonoBehaviour {
 			c.enabled = state;
 		}
 	}
+
+    void SetLightState( GameObject go, bool state ) {
+        foreach ( var l in go.GetComponentsInChildren<Light>() )
+            l.enabled = state;
+    }
 }

@@ -8,44 +8,57 @@ public class Room : MonoBehaviour
     public string roomName = "REPLACE";
     public string authorName = "ME";
 
-	List<ConnectionPoint> connections = new List<ConnectionPoint>();
+	List<Doorway> connections = new List<Doorway>();
+    public Bounds bounds { get; private set; }
 
 	void Awake() {
-		// build the list of exits / connection points.
-		// there must be an equal number of each
-		foreach( var cp in GetComponentsInChildren<ConnectionPoint>() )
-		{
+        var defaultWalls = transform.Find( "boundary" );
+        if ( defaultWalls )
+            Destroy( defaultWalls.gameObject );
+        Validate();
+	}
+
+    public bool Validate() {
+        // build the list of exits / connection points.
+        // there must be an equal number of each
+        connections.Clear();
+        foreach ( var cp in GetComponentsInChildren<Doorway>() ) {
             if ( cp.isUsed ) {
                 cp.owner = this;
                 connections.Add( cp );
             }
-		}
+        }
+        CalcBounds();
 
-        Validate();
-	}
-
-    void Validate() {
-        if ( connections.Count == 0 )
-            Debug.LogError( roomName + " : No connections marked as inUse" );
-
+        if ( connections.Count == 0 ) {
+            Debug.LogError( roomName + " : No connections marked as is used" );
+            return false;
+        }
         int exits = 0;
         int entrances = 0;
 
         foreach ( var connection in connections ) {
-            if ( connection.doorType == ConnectionPoint.DoorType.ENTRANCE )
+            if ( connection.doorType == Doorway.DoorType.ENTRANCE )
                 entrances++;
-            else if ( connection.doorType == ConnectionPoint.DoorType.EXIT )
+            else if ( connection.doorType == Doorway.DoorType.EXIT )
                 exits++;
 
             if ( Mathf.Abs( connection.connectionX - connection.transform.localPosition.x ) > Mathf.Epsilon ||
-                Mathf.Abs( connection.connectionZ - connection.transform.localPosition.z ) > Mathf.Epsilon )
+                Mathf.Abs( connection.connectionZ - connection.transform.localPosition.z ) > Mathf.Epsilon ) {
                 Debug.LogError( roomName + " : Exit was moved in the x or z dimensions" );
+                return false;
+            }
         }
-        if ( exits == connections.Count || entrances == connections.Count )
+        if ( exits == connections.Count || entrances == connections.Count ) {
             Debug.LogError( roomName + " :Connections are all marked as entrances or all marked as exits" );
+            return false;
+        }
+
+        Debug.Log( "Room " + roomName + " validated!" );
+        return true;
     }
 
-    public ConnectionPoint[] GetConnections() {
+    public Doorway[] GetConnections() {
         return connections.ToArray();
     }
 
@@ -58,7 +71,7 @@ public class Room : MonoBehaviour
         return rooms.ToArray();   
     }
 
-	public ConnectionPoint GetOpenConnection()
+	public Doorway GetOpenConnection()
 	{
         foreach ( var point in connections ) {
             if ( !point.isConnected )
@@ -68,7 +81,7 @@ public class Room : MonoBehaviour
 		return null;
 	}
 
-	public void ConnectRoom( ConnectionPoint cp, Connector connector, Room connectedRoom ){
+	public void ConnectRoom( Doorway cp, Connector connector, Room connectedRoom ){
 		if ( cp.isConnected )
             Debug.LogError( "Already room connected at " + cp );
 
@@ -91,5 +104,26 @@ public class Room : MonoBehaviour
             }
         }
         Debug.LogWarning( "Couldn't find room " + connectedRoom + " to remove" );
+    }
+
+    public void CalcBounds() {
+        // since unity bounds are broken?
+
+        bounds = new Bounds( transform.position + Vector3.up * .5f, Vector3.one );
+        foreach ( var rend in GetComponentsInChildren<Renderer>() ) {
+            Vector3 newMin = new Vector3(
+                Mathf.Min( bounds.min.x, rend.bounds.min.x ),
+                Mathf.Min( bounds.min.y, rend.bounds.min.y ),
+                Mathf.Min( bounds.min.z, rend.bounds.min.z )
+                );
+            Vector3 newMax = new Vector3(
+                Mathf.Max( bounds.max.x, rend.bounds.max.x ),
+                Mathf.Max( bounds.max.y, rend.bounds.max.y ),
+                Mathf.Max( bounds.max.z, rend.bounds.max.z )
+                );
+            Vector3 centre = ( newMin + newMax ) * .5f;
+            Vector3 size = newMax - newMin;
+            bounds = new Bounds( centre, size );
+        }
     }
 }

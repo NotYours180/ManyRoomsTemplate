@@ -1,11 +1,8 @@
 using UnityEngine;
 using System.Collections;
 
-public class ConnectionPoint : MonoBehaviour 
+public class Doorway : MonoBehaviour 
 {
-    [Tooltip( "If you care whether a door or hallway is connected here")]
-	public ConnectionType connectionType;
-
     [Tooltip( "If you care whether the player enters or exits the room here (connection points can't be all one type)")]
     public DoorType doorType;
 
