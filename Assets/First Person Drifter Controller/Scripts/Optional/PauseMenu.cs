@@ -42,7 +42,7 @@ public class PauseMenu : MonoBehaviour
 	private bool mouseSettings = false;
 	private bool quitDialog = false;
 	
-	private string invertYText = "Invert Y Axis";
+	private string invertYText = "INVERT Y AXIS";
 	
 	private MouseLook camMouseLook;
 	private MouseLook capsuleMouseLook;
@@ -107,29 +107,26 @@ public class PauseMenu : MonoBehaviour
 			if( !mouseSettings && !quitDialog)
 			{
 				DrawPauseMenuBG();
-				
+
+                var titleStyle = new GUIStyle( pauseMenuStyle );
+                titleStyle.fontSize = (int)( titleStyle.fontSize * 1.5f );
+                GUI.Label( new Rect( Screen.width / 2 - buttonWidth / 2, buttonHeight, buttonWidth, buttonHeight ), "<i>" + LevelGen.currentRoom.roomName + "</i>", titleStyle );
+                GUI.Label( new Rect( Screen.width / 2 - buttonWidth / 2, buttonHeight * 2f, buttonWidth, buttonHeight ), "by " + LevelGen.currentRoom.authorName, titleStyle );
+
 				// Resume game button
-				if(GUI.Button(new Rect(Screen.width/2 - buttonWidth/2, buttonHeight, buttonWidth, buttonHeight), "Resume", pauseMenuStyle))
+				if(GUI.Button(new Rect(Screen.width/2 - buttonWidth - buttonWidth/2, Screen.height - buttonHeight, buttonWidth, buttonHeight), "RESUME", pauseMenuStyle))
 				{
 					PauseGame();
-				}
-				
-				// Reset level button
-				if(GUI.Button(new Rect(Screen.width/2 - buttonWidth/2, buttonHeight*2, buttonWidth, buttonHeight), "Reset Level", pauseMenuStyle))
-				{
-					print("Reset Level");
-					PauseGame();
-					Application.LoadLevel(Application.loadedLevel);
 				}
 				
 				// options button
-				if(GUI.Button(new Rect(Screen.width/2 - buttonWidth/2, buttonHeight*3, buttonWidth, buttonHeight), "Options", pauseMenuStyle))
+                if ( GUI.Button( new Rect( Screen.width / 2 - buttonWidth / 2, Screen.height - buttonHeight, buttonWidth, buttonHeight ), "OPTIONS", pauseMenuStyle ) )
 				{
 					mouseSettings = true;
 				}
 				
 				// Quit button
-				if(GUI.Button(new Rect(Screen.width/2 - buttonWidth/2, buttonHeight*4, buttonWidth, buttonHeight), "Quit Game", pauseMenuStyle))
+                if ( GUI.Button( new Rect( Screen.width / 2 + buttonWidth - buttonWidth / 2, Screen.height - buttonHeight, buttonWidth, buttonHeight ), "QUIT", pauseMenuStyle ) )
 				{
 					quitDialog = true;
 				}
@@ -139,7 +136,7 @@ public class PauseMenu : MonoBehaviour
 				DrawPauseMenuBG();
 				
 				// BACK button
-				if( GUI.Button(new Rect(littleButtonWidth/2, 0, littleButtonWidth, littleButtonHeight), "Back", pauseMenuStyle) )
+				if( GUI.Button(new Rect(littleButtonWidth/2, 0, littleButtonWidth, littleButtonHeight), "BACK", pauseMenuStyle) )
 				{
 					mouseSettings = false;
 				}
@@ -151,10 +148,10 @@ public class PauseMenu : MonoBehaviour
 				}
 				
 				// SFX Label
-				GUI.Label(new Rect( Screen.width/2 - buttonWidth/2 - sliderWidth, Screen.height/2 - buttonHeight, buttonWidth, buttonHeight), "Field of view [" + (int)fovSlider + "]", pauseMenuStyle);
+				GUI.Label(new Rect( Screen.width/2 - buttonWidth/2 - sliderWidth, Screen.height/2 - buttonHeight, buttonWidth, buttonHeight), "field of view [" + (int)fovSlider + "]", pauseMenuStyle);
 				
 				// MUSIC label
-				GUI.Label(new Rect( Screen.width/2 - buttonWidth/2 - sliderWidth, Screen.height/2, buttonWidth, buttonHeight), "Sensitivity [" + (int)sensitivitySlider + "]", pauseMenuStyle);
+				GUI.Label(new Rect( Screen.width/2 - buttonWidth/2 - sliderWidth, Screen.height/2, buttonWidth, buttonHeight), "sensitivity [" + (int)sensitivitySlider + "]", pauseMenuStyle);
 				
 				// FOV SLIDER
 				GUI.skin.horizontalSliderThumb = scrollButtonStyle;
@@ -166,7 +163,7 @@ public class PauseMenu : MonoBehaviour
 				sensitivitySlider = GUI.HorizontalSlider (new Rect (Screen.width/2, Screen.height/2 + sliderHeight/2, sliderWidth, sliderHeight), sensitivitySlider, minSensitivity, maxSensitivity, scrollBarStyle, scrollButtonStyle);
 				SetSensitivity();
 				
-				if( GUI.Button(new Rect(Screen.width/2 - buttonWidth/2, Screen.height/2 + buttonHeight, buttonWidth, buttonHeight), "Reset to default", pauseMenuStyle) )
+				if( GUI.Button(new Rect(Screen.width/2 - buttonWidth/2, Screen.height/2 + buttonHeight, buttonWidth, buttonHeight), "RESET TO DEFAULT", pauseMenuStyle) )
 				{
 					ResetToDefault();
 				}
@@ -175,15 +172,15 @@ public class PauseMenu : MonoBehaviour
 			{
 				DrawPauseMenuBG();
 				// Are you sure label
-				GUI.Label(new Rect( Screen.width/2 - buttonWidth/2, Screen.height/2 - buttonHeight, buttonWidth, buttonHeight), "Are you sure?", pauseMenuStyle);
+				GUI.Label(new Rect( Screen.width/2 - buttonWidth/2, Screen.height/2 - buttonHeight, buttonWidth, buttonHeight), "are you sure?", pauseMenuStyle);
 			
 				// yes
-				if( GUI.Button(new Rect(Screen.width/2 - buttonWidth/2, Screen.height/2, buttonWidth, buttonHeight), "Yes", pauseMenuStyle) )
+				if( GUI.Button(new Rect(Screen.width/2 - buttonWidth/2, Screen.height/2, buttonWidth, buttonHeight), "YES", pauseMenuStyle) )
 				{
 					Application.Quit();
 				}
 				// no
-				if( GUI.Button(new Rect(Screen.width/2 - buttonWidth/2, Screen.height/2 + buttonHeight, buttonWidth, buttonHeight), "No", pauseMenuStyle) )
+				if( GUI.Button(new Rect(Screen.width/2 - buttonWidth/2, Screen.height/2 + buttonHeight, buttonWidth, buttonHeight), "NO", pauseMenuStyle) )
 				{
 					quitDialog = false;
 				}
@@ -200,7 +197,8 @@ public class PauseMenu : MonoBehaviour
 			zoom.SetBaseFOV(fovSlider);
 		}
 		
-		Camera.main.fieldOfView = fovSlider;
+        foreach ( var cam in Camera.main.GetComponentsInChildren<Camera>() )
+		    cam.fieldOfView = fovSlider;
 		
 		PlayerPrefs.SetFloat("FOV", fovSlider);
 	}
@@ -322,7 +320,7 @@ public class PauseMenu : MonoBehaviour
 	{
 		littleButtonWidth = Screen.width / 12;
 		littleButtonHeight = Screen.height / 8;
-		buttonWidth = Screen.width / 2;
+		buttonWidth = Screen.width / 3;
 		buttonHeight = Screen.height / 6;
 		sliderWidth = Screen.width / 6;
 		sliderHeight = Screen.height / 12;

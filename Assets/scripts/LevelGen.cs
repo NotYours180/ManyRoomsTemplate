@@ -14,7 +14,7 @@ public class LevelGen : MonoBehaviour {
 
     public GameObject player;
 
-	Room currentRoom;
+    public static Room currentRoom { get; private set; }
 	int nearLayer, farLayer, far2Layer;
     bool enteringRoom;
 
